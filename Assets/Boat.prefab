@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7233531086499706614}
   - component: {fileID: 2814888586449613105}
+  - component: {fileID: 3710721318906136201}
   - component: {fileID: 1433372189642151008}
   - component: {fileID: 1043753762090463271}
   - component: {fileID: 1886880233817341662}
@@ -47,20 +48,38 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f6028682e3b7c843becb0cbc17246bc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 0.66
-  rotationSpeed: 1
-  stoppingDistance: 0.5
+  moveSpeed: 0.6
+  rotationSpeed: 0.6
+  stoppingDistance: 0.3
   target: {fileID: 0}
-  raycastDistance: 1
-  numberOfRays: 3
-  raySpreadAngle: 20
+  repulsionCheckInterval: 0.1
+  repulsionRadius: 0.6
+  repulsionForce: 0.2
+  boatLayerMask:
+    serializedVersion: 2
+    m_Bits: 128
+  repulsionSpeedMultiplier: 0.4
+  raycastDistance: 1.25
   obstacleLayerMask:
     serializedVersion: 2
     m_Bits: 64
   avoidanceForce: 0.6
-  upSprite: {fileID: 21300000, guid: 64b39ec2fd5f4b547adfb4ad30ed7628, type: 3}
+  avoidanceBuffer: 0.05
   rightSprite: {fileID: 21300000, guid: 486091bc762355445bf9c0d37dffc097, type: 3}
+  downRightSprite: {fileID: 21300000, guid: 7002c1c7f2fe0b443aebfe7719131a9d, type: 3}
   downSprite: {fileID: 21300000, guid: 04d0467bddd90ca44a32ccea4662703d, type: 3}
+--- !u!114 &3710721318906136201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 292252994493813245}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d61e297a44fa1a41a18e1f5ca8068ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!212 &1433372189642151008
 SpriteRenderer:
   m_ObjectHideFlags: 0

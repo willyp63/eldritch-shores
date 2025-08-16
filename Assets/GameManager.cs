@@ -7,10 +7,10 @@ public class GameManager : MonoBehaviour
     [Header("Boat Spawning")]
     public GameObject boatPrefab;
     public float spawnInterval = 3f;
-    public float targetDistance = 12f; // Distance south from spawn position
 
     [Header("Spawn Bounds")]
     public Bounds spawnBounds;
+    public Bounds targetBounds;
 
     [Header("Boat Management")]
     public int maxBoats = 10; // Maximum number of boats in the scene
@@ -60,8 +60,12 @@ public class GameManager : MonoBehaviour
             0f
         );
 
-        // Calculate target position (south of spawn)
-        Vector3 targetPosition = spawnPosition + Vector3.down * targetDistance;
+        // Generate random target position within bounds
+        Vector3 targetPosition = new Vector3(
+            Random.Range(targetBounds.min.x, targetBounds.max.x),
+            Random.Range(targetBounds.min.y, targetBounds.max.y),
+            0f
+        );
 
         // Instantiate the boat
         GameObject boatObject = Instantiate(boatPrefab, spawnPosition, Quaternion.identity);
@@ -71,11 +75,10 @@ public class GameManager : MonoBehaviour
         {
             // Set the boat's target
             boat.target = CreateTargetTransform(targetPosition);
+            boat.moveSpeed *= Random.Range(0.9f, 1.1f); // Randomly adjust the boat's speed
 
             // Add to active boats list
             activeBoats.Add(boat);
-
-            Debug.Log($"Spawned boat at {spawnPosition} with target at {targetPosition}");
         }
         else
         {
@@ -141,8 +144,6 @@ public class GameManager : MonoBehaviour
 
         // Destroy the boat GameObject
         Destroy(boat.gameObject);
-
-        Debug.Log($"Despawned boat at {boat.transform.position}");
     }
 
     // Public method to manually spawn a boat (useful for testing)
@@ -196,5 +197,8 @@ public class GameManager : MonoBehaviour
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireCube(spawnBounds.center, spawnBounds.size);
+
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireCube(targetBounds.center, targetBounds.size);
     }
 }

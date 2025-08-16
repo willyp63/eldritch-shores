@@ -10,20 +10,27 @@ public class Boat : MonoBehaviour
     public float stoppingDistance = 1f;
     public Transform target;
 
+    [Header("Boat Repulsion Settings")]
+    public float repulsionCheckInterval = 0.2f; // Check every 0.2 seconds
+    public float repulsionRadius = 1f; // Distance at which boats start repelling each other
+    public float repulsionForce = 1f; // 0 to 1, 0 = no repulsion, 1 = full repulsion
+    public LayerMask boatLayerMask = -1; // Layer mask for boats
+    public float repulsionSpeedMultiplier = 0.5f;
+
     [Header("Pathfinding Settings")]
     public float raycastDistance = 3f;
-    public int numberOfRays = 5;
-    public float raySpreadAngle = 45f;
     public LayerMask obstacleLayerMask = -1;
-    public float avoidanceForce = 2f;
+    public float avoidanceForce = 1f; // 0 to 1, 0 = no avoidance, 1 = full avoidance
+    public float avoidanceBuffer = 0.05f;
 
     [Header("Sprites")]
-    public Sprite upSprite;
     public Sprite rightSprite;
+    public Sprite downRightSprite;
     public Sprite downSprite;
 
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
+    private CircleCollider2D boatCollider;
     private Camera mainCamera;
     private Vector2 targetPosition;
     private float currentDirection; // Internal direction the boat is facing (in degrees)
@@ -32,10 +39,16 @@ public class Boat : MonoBehaviour
     // Pathfinding variables
     private Vector2 avoidanceDirection = Vector2.zero;
 
+    // Boat repulsion variables
+    private float repulsionCheckTimer = 0f;
+    private Vector2 repulsionDirection = Vector2.zero;
+    private bool isRepellingBoatAhead = false;
+
     void Start()
     {
         // Get components
         rb = GetComponent<Rigidbody2D>();
+        boatCollider = GetComponent<CircleCollider2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         mainCamera = Camera.main;
 
@@ -51,8 +64,68 @@ public class Boat : MonoBehaviour
         // Vector2 mousePos = new Vector2(mouseWorldPos.x, mouseWorldPos.y);
         targetPosition = target.position;
 
+        // Update repulsion check timer
+        repulsionCheckTimer += Time.deltaTime;
+        if (repulsionCheckTimer >= repulsionCheckInterval)
+        {
+            CheckForNearbyBoats();
+            repulsionCheckTimer = 0f;
+        }
+
         // Update sprite based on simulated direction
         UpdateSprite();
+    }
+
+    private void CheckForNearbyBoats()
+    {
+        repulsionDirection = Vector2.zero;
+        isRepellingBoatAhead = false;
+
+        Vector2 boatPosition = GetBoatPosition();
+
+        // Find all boats within the repulsion radius
+        Collider2D[] nearbyBoats = Physics2D.OverlapCircleAll(
+            boatPosition,
+            repulsionRadius,
+            boatLayerMask
+        );
+
+        foreach (Collider2D boatCollider in nearbyBoats)
+        {
+            // Skip self
+            if (boatCollider.gameObject == gameObject)
+                continue;
+
+            Boat otherBoat = boatCollider.GetComponent<Boat>();
+            if (otherBoat == null)
+                continue;
+
+            // Calculate distance and direction to the other boat
+            Vector2 toOtherBoat = otherBoat.GetBoatPosition() - boatPosition;
+            float distance = toOtherBoat.magnitude;
+
+            // Only apply repulsion if within the repulsion radius
+            if (distance <= repulsionRadius && distance > 0)
+            {
+                // Calculate repulsion force (stronger when closer)
+                float repulsionStrength = 1f - (distance / repulsionRadius);
+                Vector2 repulsionVector = -toOtherBoat.normalized * repulsionStrength;
+
+                // Add to total repulsion direction
+                repulsionDirection += repulsionVector;
+
+                if (otherBoat.GetBoatPosition().y < boatPosition.y)
+                {
+                    isRepellingBoatAhead = true;
+                }
+            }
+        }
+
+        // Normalize the repulsion direction
+        if (repulsionDirection.magnitude > 0)
+        {
+            repulsionDirection.Normalize();
+        }
     }
 
     void FixedUpdate()
@@ -60,8 +133,10 @@ public class Boat : MonoBehaviour
         // Check for obstacles ahead
         CheckForObstacles();
 
+        Vector2 boatPosition = GetBoatPosition();
+
         // Calculate distance to target
-        float distanceToTarget = Vector2.Distance(transform.position, targetPosition);
+        float distanceToTarget = Vector2.Distance(boatPosition, targetPosition);
 
         // Only move if we're not close enough to the target
         if (distanceToTarget > stoppingDistance)
@@ -69,7 +144,16 @@ public class Boat : MonoBehaviour
             Vector2 steerDirection =
                 avoidanceDirection != Vector2.zero
                     ? avoidanceDirection
-                    : (targetPosition - (Vector2)transform.position).normalized;
+                    : (targetPosition - boatPosition).normalized;
+
+            // Apply repulsion force if there are nearby boats
+            if (repulsionDirection.magnitude > 0)
+            {
+                // Blend repulsion with steering direction
+                steerDirection = Vector2
+                    .Lerp(steerDirection, repulsionDirection, repulsionForce)
+                    .normalized;
+            }
 
             // Calculate target angle (0 = up, 90 = right, 180 = down, 270 = left)
             float targetAngle = Mathf.Atan2(steerDirection.x, steerDirection.y) * Mathf.Rad2Deg;
@@ -89,7 +173,10 @@ public class Boat : MonoBehaviour
             Vector2 moveDirection = GetDirectionVector(currentDirection);
 
             // Apply movement force
-            rb.AddForce(moveDirection * moveSpeed, ForceMode2D.Force);
+            float adjustedMoveSpeed = isRepellingBoatAhead
+                ? moveSpeed * repulsionSpeedMultiplier
+                : moveSpeed;
+            rb.AddForce(moveDirection * adjustedMoveSpeed, ForceMode2D.Force);
 
             // Store current velocity for sprite updates
             currentVelocity = rb.velocity;
@@ -115,23 +202,34 @@ public class Boat : MonoBehaviour
         result.hasObstacle = false;
         result.closestDistance = float.MaxValue;
 
-        // Cast multiple rays in a cone in front of the boat
-        for (int i = 0; i < numberOfRays; i++)
-        {
-            Vector2 targetDirection = (targetPosition - (Vector2)transform.position).normalized;
-            float targetAngle = Mathf.Atan2(targetDirection.x, targetDirection.y) * Mathf.Rad2Deg;
-            float rayAngle = -raySpreadAngle / 2f + (raySpreadAngle / (numberOfRays - 1)) * i;
-            float worldAngle = targetAngle + rayAngle;
-            Vector2 rayDirection = GetDirectionVector(worldAngle);
+        // Get the boat's CircleCollider2D to determine the radius for offset rays
+        float boatRadius = GetBoatRadius();
+        Vector2 boatPosition = GetBoatPosition();
 
+        // Cast 3 rays: center, left offset, and right offset
+        Vector2 targetDirection = (targetPosition - boatPosition).normalized;
+
+        // Calculate perpendicular direction (90 degrees to the right of target direction)
+        Vector2 rightPerpendicularDirection = Vector2.Perpendicular(targetDirection);
+        Vector2 leftPerpendicularDirection = -rightPerpendicularDirection;
+
+        // Define the three ray directions
+        Vector2[] rayStartPositions = new Vector2[3];
+        rayStartPositions[0] = boatPosition; // Center ray
+        rayStartPositions[1] =
+            boatPosition + leftPerpendicularDirection * (boatRadius + avoidanceBuffer); // Left offset ray
+        rayStartPositions[2] =
+            boatPosition + rightPerpendicularDirection * (boatRadius + avoidanceBuffer); // Right offset ray
+
+        // Cast all three rays
+        for (int i = 0; i < 3; i++)
+        {
             RaycastHit2D hit = Physics2D.Raycast(
-                transform.position,
-                rayDirection,
+                rayStartPositions[i],
+                targetDirection,
                 raycastDistance,
                 obstacleLayerMask
             );
-
-            Debug.Log(hit.collider);
 
             if (hit.collider != null)
             {
@@ -139,14 +237,19 @@ public class Boat : MonoBehaviour
                 CircleCollider2D circleCollider = hit.collider.GetComponent<CircleCollider2D>();
                 if (circleCollider != null)
                 {
-                    result.hasObstacle = true;
-
-                    if (hit.distance < result.closestDistance)
+                    // Check if the obstacle is lit up before considering it for avoidance
+                    Obstacle obstacle = hit.collider.GetComponent<Obstacle>();
+                    if (obstacle != null && obstacle.IsLit())
                     {
-                        result.closestDistance = hit.distance;
-                        result.obstacleCenter = hit.collider.transform.position;
-                        result.obstacleRadius =
-                            circleCollider.radius * hit.collider.transform.localScale.x;
+                        result.hasObstacle = true;
+
+                        if (hit.distance < result.closestDistance)
+                        {
+                            result.closestDistance = hit.distance;
+                            result.obstacleCenter = hit.collider.transform.position;
+                            result.obstacleRadius =
+                                circleCollider.radius * hit.collider.transform.localScale.x;
+                        }
                     }
                 }
             }
@@ -155,25 +258,25 @@ public class Boat : MonoBehaviour
         if (result.hasObstacle)
         {
             // Calculate which side to steer around the obstacle
-            Vector2 toObstacle = result.obstacleCenter - (Vector2)transform.position;
-            Vector2 toTarget = (targetPosition - (Vector2)transform.position).normalized;
+            Vector2 toObstacle = result.obstacleCenter - boatPosition;
+            Vector2 toTarget = (targetPosition - boatPosition).normalized;
 
             // Calculate cross product to determine which side is "left" and "right"
             float crossProduct = toTarget.x * toObstacle.y - toTarget.y * toObstacle.x;
 
             // Calculate perpendicular direction (90 degrees to the right of forward direction)
-            Vector2 rightDirection = new Vector2(toTarget.y, -toTarget.x);
+            Vector2 perpRightDirection = new Vector2(toTarget.y, -toTarget.x);
 
             Vector2 perpendicularDirection;
             if (crossProduct > 0)
             {
                 // Obstacle is to the left, steer right
-                perpendicularDirection = rightDirection;
+                perpendicularDirection = perpRightDirection;
             }
             else
             {
                 // Obstacle is to the right, steer left
-                perpendicularDirection = -rightDirection;
+                perpendicularDirection = -perpRightDirection;
             }
 
             // Use avoidanceForce to blend between going straight (0) and steering perpendicular (1)
@@ -195,18 +298,34 @@ public class Boat : MonoBehaviour
         if (!Application.isPlaying)
             return;
 
-        // Draw raycasts
-        Gizmos.color = Color.yellow;
-        for (int i = 0; i < numberOfRays; i++)
-        {
-            Vector2 targetDirection = (targetPosition - (Vector2)transform.position).normalized;
-            float targetAngle = Mathf.Atan2(targetDirection.x, targetDirection.y) * Mathf.Rad2Deg;
-            float rayAngle = -raySpreadAngle / 2f + (raySpreadAngle / (numberOfRays - 1)) * i;
-            float worldAngle = targetAngle + rayAngle;
-            Vector2 rayDirection = GetDirectionVector(worldAngle);
+        if (boatCollider == null)
+            boatCollider = GetComponent<CircleCollider2D>();
 
-            Vector3 rayStart = transform.position;
-            Vector3 rayEnd = rayStart + (Vector3)(rayDirection * raycastDistance);
+        // Draw raycasts (3 rays: center, left offset, right offset)
+        Gizmos.color = Color.yellow;
+
+        // Get the boat's CircleCollider2D to determine the radius for offset rays
+        float boatRadius = GetBoatRadius();
+        Vector2 boatPosition = GetBoatPosition();
+        Vector2 targetDirection = (targetPosition - boatPosition).normalized;
+
+        // Calculate perpendicular direction (90 degrees to the right of target direction)
+        Vector2 rightPerpendicularDirection = Vector2.Perpendicular(targetDirection);
+        Vector2 leftPerpendicularDirection = -rightPerpendicularDirection;
+
+        // Define the three ray directions
+        Vector2[] rayStartPositions = new Vector2[3];
+        rayStartPositions[0] = boatPosition; // Center ray
+        rayStartPositions[1] =
+            boatPosition + leftPerpendicularDirection * (boatRadius + avoidanceBuffer); // Left offset ray
+        rayStartPositions[2] =
+            boatPosition + rightPerpendicularDirection * (boatRadius + avoidanceBuffer); // Right offset ray
+
+        for (int i = 0; i < 3; i++)
+        {
+            Vector2 rayStart = rayStartPositions[i];
+            Vector2 rayDirection = targetDirection;
+            Vector3 rayEnd = (Vector3)(rayStart + rayDirection * raycastDistance);
 
             Gizmos.DrawLine(rayStart, rayEnd);
         }
@@ -219,10 +338,35 @@ public class Boat : MonoBehaviour
         if (avoidanceDirection != Vector2.zero)
         {
             Gizmos.color = Color.red;
-            Vector3 avoidanceStart = transform.position;
+            Vector3 avoidanceStart = boatPosition;
             Vector3 avoidanceEnd = avoidanceStart + (Vector3)(avoidanceDirection * 2f);
             Gizmos.DrawLine(avoidanceStart, avoidanceEnd);
         }
+
+        // Draw repulsion radius
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(boatPosition, repulsionRadius);
+
+        // Draw repulsion direction if repelling
+        if (repulsionDirection != Vector2.zero)
+        {
+            Gizmos.color = Color.magenta;
+            Vector3 repulsionStart = boatPosition;
+            Vector3 repulsionEnd = repulsionStart + (Vector3)(repulsionDirection * 2f);
+            Gizmos.DrawLine(repulsionStart, repulsionEnd);
+        }
+    }
+
+    public float GetBoatRadius()
+    {
+        return boatCollider != null ? boatCollider.radius * transform.localScale.x : 0.5f;
+    }
+
+    public Vector2 GetBoatPosition()
+    {
+        return boatCollider != null
+            ? (Vector2)transform.position + boatCollider.offset
+            : (Vector2)transform.position;
     }
 
     Vector2 GetDirectionVector(float angle)
@@ -242,27 +386,35 @@ public class Boat : MonoBehaviour
         float directionAngle = currentDirection;
 
         // Determine which sprite to use based on simulated direction
-        if (directionAngle >= 45f && directionAngle < 135f)
+        if (directionAngle >= 0f && directionAngle < 112.5f)
         {
             // Facing right
             spriteRenderer.sprite = rightSprite;
             spriteRenderer.flipX = false;
         }
-        else if (directionAngle >= 135f && directionAngle < 225f)
+        else if (directionAngle >= 112.5f && directionAngle < 157.5f)
+        {
+            // Facing down-right
+            spriteRenderer.sprite = downRightSprite;
+            spriteRenderer.flipX = false;
+        }
+        else if (directionAngle >= 157.5f && directionAngle < 202.5f)
         {
             // Facing down
             spriteRenderer.sprite = downSprite;
+            spriteRenderer.flipX = false;
         }
-        else if (directionAngle >= 225f && directionAngle < 315f)
+        else if (directionAngle >= 202.5f && directionAngle < 247.5f)
+        {
+            // Facing down-left
+            spriteRenderer.sprite = downRightSprite;
+            spriteRenderer.flipX = true;
+        }
+        else if (directionAngle >= 247.5f)
         {
             // Facing left
             spriteRenderer.sprite = rightSprite;
             spriteRenderer.flipX = true;
-        }
-        else
-        {
-            // Facing up
-            spriteRenderer.sprite = upSprite;
         }
     }
 
@@ -301,6 +453,8 @@ public class Boat : MonoBehaviour
         // Check if the collision is with an Obstacle
         if (collision.gameObject.GetComponent<Obstacle>() != null)
         {
+            Debug.Log("Boat hit obstacle!!");
+
             // Destroy the boat
             Destroy(gameObject);
         }
