@@ -3788,7 +3788,7 @@ MonoBehaviour:
     m_Extent: {x: 0.5, y: 0.5, z: 0}
   - m_Center: {x: -10, y: 5, z: 0}
     m_Extent: {x: 0.5, y: 0.5, z: 0}
-  maxLives: 1
+  maxLives: 4
   explosionPrefab: {fileID: 8946050436033155904, guid: de3dc86fb0a4a254082f2f3ffc9feffb, type: 3}
 --- !u!4 &858842250
 Transform:

@@ -57,5 +57,5 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 3cfcf9f7317c3fe449fa541f294741a5, type: 3}
   - {fileID: 8300000, guid: 7d164b482ec34034587c9891177f5198, type: 3}
   backgroundMusic: {fileID: 8300000, guid: 78e8e4880d68d23428b8820be8aea09f, type: 3}
-  sfxMaxVolume: 1
+  sfxMaxVolume: 0.8
   musicMaxVolume: 0.2
