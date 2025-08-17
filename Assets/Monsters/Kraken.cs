@@ -35,7 +35,6 @@ public class Kraken : MonoBehaviour
 
     // Boat chasing variables
     private Transform targetBoat = null;
-    private bool isUnderBoat = false;
     private float boatChaseTimer = 0f;
     public float boatChaseUpdateInterval = 0.5f; // How often to update boat target when chasing
 
@@ -101,8 +100,6 @@ public class Kraken : MonoBehaviour
             float distanceToBoat = Vector2.Distance(GetKrakenPosition(), currentTarget);
             if (distanceToBoat <= stoppingDistance)
             {
-                isUnderBoat = true;
-
                 Debug.Log("Kraken sunk boat!!");
 
                 FloatingTextManager.Instance.SpawnText(
@@ -132,7 +129,6 @@ public class Kraken : MonoBehaviour
     {
         // Reset boat chasing state
         targetBoat = null;
-        isUnderBoat = false;
 
         // Update wander timer
         wanderTimer += Time.deltaTime;
@@ -212,7 +208,6 @@ public class Kraken : MonoBehaviour
 
         // Clear boat target and return to wandering
         targetBoat = null;
-        isUnderBoat = false;
         PickNewTarget();
     }
 
