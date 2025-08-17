@@ -94,6 +94,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3684889308863648297}
   - component: {fileID: 5596047247161698547}
+  - component: {fileID: -7396642302546075644}
   - component: {fileID: 1792466704887351875}
   - component: {fileID: 4104851815679000032}
   - component: {fileID: 1460441680795698519}
@@ -133,11 +134,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d68415f2c7bde0b43a6cad2d4ce1ad25, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isMovingObstacle: 0
+  isMovingRight: 0
+  moveDelay: 0
+  moveSpeed: 1
+  moveDistance: 10
+--- !u!114 &-7396642302546075644
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6673440058312400841}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6fa353d236060247bcbeb77d6144aa9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   chargeTime: 0.5
   drainTime: 3
   maxGlow: 3
   alwaysLit: 0
-  interactionDistance: 1
+  interactionDistance: 0.5
 --- !u!114 &1792466704887351875
 MonoBehaviour:
   m_ObjectHideFlags: 0

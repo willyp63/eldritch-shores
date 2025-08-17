@@ -266,7 +266,8 @@ public class Boat : MonoBehaviour
                 {
                     // Check if the obstacle is lit up before considering it for avoidance
                     Obstacle obstacle = hit.collider.GetComponent<Obstacle>();
-                    if (obstacle != null && obstacle.IsLit())
+                    LightAbsorber lightAbsorber = hit.collider.GetComponent<LightAbsorber>();
+                    if (obstacle != null && lightAbsorber != null && lightAbsorber.IsLit())
                     {
                         result.hasObstacle = true;
 
@@ -482,12 +483,9 @@ public class Boat : MonoBehaviour
         {
             Debug.Log("Boat hit obstacle!!");
 
-            FloatingTextManager.Instance.SpawnText(
-                "SHIP WRECKED!",
-                GetBoatPosition(),
-                Color.red,
-                1f
-            );
+            FloatingTextManager.Instance.SpawnText("WRECKED!", GetBoatPosition(), Color.red, 1f);
+
+            GameManager.Instance.LoseLife();
 
             // Destroy the boat
             Destroy(gameObject);

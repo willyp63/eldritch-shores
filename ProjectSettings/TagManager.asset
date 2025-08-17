@@ -13,8 +13,8 @@ TagManager:
   - UI
   - Obstacle
   - Boat
-  - 
-  - 
+  - Treasure
+  - Monsters
   - 
   - 
   - 
@@ -40,6 +40,9 @@ TagManager:
   m_SortingLayers:
   - name: Background
     uniqueID: 1510557109
+    locked: 0
+  - name: Treasure
+    uniqueID: 103734031
     locked: 0
   - name: Default
     uniqueID: 0
