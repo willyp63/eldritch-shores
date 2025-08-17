@@ -7,15 +7,26 @@ public class Obstacle : MonoBehaviour
     [Header("Lighting Settings")]
     public float chargeTime = 0.5f;
     public float drainTime = 3f;
+    public float maxGlow = 5f;
     public bool alwaysLit = false;
+
+    [Header("Interaction Settings")]
+    public float interactionDistance = 1f; // Distance from collider edge to start charging
 
     private float currentLightLevel = 0f;
     private bool isBeingCharged = false;
     private SpriteRenderer[] spriteRenderers;
+    private CircleCollider2D circleCollider;
 
     void Start()
     {
         spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        circleCollider = GetComponent<CircleCollider2D>();
+
+        if (circleCollider == null)
+        {
+            Debug.LogWarning("Obstacle requires a CircleCollider2D component!");
+        }
     }
 
     void Update()
@@ -27,17 +38,39 @@ public class Obstacle : MonoBehaviour
 
     void HandleMouseInput()
     {
-        // Check if mouse is over this obstacle
+        // Check if mouse is within interaction distance of this obstacle
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Collider2D hitCollider = Physics2D.OverlapPoint(mousePosition);
 
-        if (hitCollider != null && hitCollider.gameObject == gameObject)
+        if (circleCollider != null)
         {
-            isBeingCharged = true;
+            // Calculate distance from mouse to the center of the collider
+            float distanceToCenter = Vector2.Distance(mousePosition, (Vector2)transform.position);
+
+            // Calculate the total interaction radius (collider radius + interaction distance)
+            float totalInteractionRadius = circleCollider.radius + interactionDistance;
+
+            // Check if mouse is within the interaction range
+            if (distanceToCenter <= totalInteractionRadius)
+            {
+                isBeingCharged = true;
+            }
+            else
+            {
+                isBeingCharged = false;
+            }
         }
         else
         {
-            isBeingCharged = false;
+            // Fallback to original behavior if no CircleCollider2D
+            Collider2D hitCollider = Physics2D.OverlapPoint(mousePosition);
+            if (hitCollider != null && hitCollider.gameObject == gameObject)
+            {
+                isBeingCharged = true;
+            }
+            else
+            {
+                isBeingCharged = false;
+            }
         }
     }
 
@@ -68,11 +101,7 @@ public class Obstacle : MonoBehaviour
             {
                 if (spriteRenderers[i] != null)
                 {
-                    // Simple transition from dark gray to white
-                    Color darkGray = new Color(0.3f, 0.3f, 0.3f);
-                    Color finalColor = Color.Lerp(darkGray, Color.white, currentLightLevel);
-
-                    spriteRenderers[i].color = finalColor;
+                    spriteRenderers[i].material.SetFloat("_Glow", currentLightLevel * maxGlow);
                 }
             }
         }

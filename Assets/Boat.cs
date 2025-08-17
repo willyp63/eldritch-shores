@@ -1,9 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 public class Boat : MonoBehaviour
 {
+    [Header("Points")]
+    public int points = 100;
+
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
     public float rotationSpeed = 3f;
@@ -28,6 +32,12 @@ public class Boat : MonoBehaviour
     public Sprite downRightSprite;
     public Sprite downSprite;
 
+    [Header("Lights")]
+    public Light2D boatLight;
+    public float lightIntensity = 1f;
+    public float lightPulseSpeed = 2f;
+    public float lightPulseAmount = 0.1f;
+
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
     private CircleCollider2D boatCollider;
@@ -43,6 +53,9 @@ public class Boat : MonoBehaviour
     private float repulsionCheckTimer = 0f;
     private Vector2 repulsionDirection = Vector2.zero;
     private bool isRepellingBoatAhead = false;
+
+    private bool isScored = false;
+    public bool IsScored => isScored;
 
     void Start()
     {
@@ -74,6 +87,20 @@ public class Boat : MonoBehaviour
 
         // Update sprite based on simulated direction
         UpdateSprite();
+
+        // Update light
+        UpdateLight();
+    }
+
+    private void UpdateLight()
+    {
+        float pulse = Mathf.Sin(Time.time * lightPulseSpeed) * lightPulseAmount;
+        boatLight.intensity = lightIntensity + pulse;
+    }
+
+    public void Score()
+    {
+        isScored = true;
     }
 
     private void CheckForNearbyBoats()
@@ -454,6 +481,13 @@ public class Boat : MonoBehaviour
         if (collision.gameObject.GetComponent<Obstacle>() != null)
         {
             Debug.Log("Boat hit obstacle!!");
+
+            FloatingTextManager.Instance.SpawnText(
+                "SHIP WRECKED!",
+                GetBoatPosition(),
+                Color.red,
+                1f
+            );
 
             // Destroy the boat
             Destroy(gameObject);

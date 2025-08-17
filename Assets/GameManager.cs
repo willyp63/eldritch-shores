@@ -7,6 +7,7 @@ public class GameManager : MonoBehaviour
     [Header("Boat Spawning")]
     public GameObject boatPrefab;
     public float spawnInterval = 3f;
+    public float scoreBoatAtY = -4.5f;
 
     [Header("Spawn Bounds")]
     public Bounds spawnBounds;
@@ -28,6 +29,24 @@ public class GameManager : MonoBehaviour
     {
         // Check if any boats have reached their target and need to be despawned
         CheckForBoatsToDespawn();
+        CheckForBoatsToScore();
+    }
+
+    void CheckForBoatsToScore()
+    {
+        foreach (Boat boat in activeBoats)
+        {
+            if (boat != null && !boat.IsScored && boat.GetBoatPosition().y <= scoreBoatAtY)
+            {
+                FloatingTextManager.Instance.SpawnText(
+                    $"+{boat.points} PTS",
+                    boat.GetBoatPosition(),
+                    FloatingTextManager.pointsColor,
+                    1f
+                );
+                boat.Score();
+            }
+        }
     }
 
     IEnumerator SpawnBoatsRoutine()
