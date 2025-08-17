@@ -29,47 +29,50 @@ public class GameManager : Singleton<GameManager>
     public float livesChestSpawnChance = 0.2f;
     public float chestSpawnInterval = 10f;
     public Bounds chestSpawnBounds;
-    public List<Bounds> invalidChestSpawnBounds;
+    public List<Bounds> invalidChestSpawnBounds = new();
     public LayerMask obstacleLayer;
 
     [Header("Kraken Spawning")]
     public GameObject krakenPrefab;
     public float krakenSpawnInterval = 60f;
     public float initialKrakenSpawnDelay = 10f;
+    public List<Bounds> krakenSpawnBounds = new();
+
+    private int currentKrakenSpawnIndex = 0;
 
     [Header("Gameplay")]
-    public float maxEnergy = 100f;
-    public float energyGainedPerSecond = 1f;
-    public float energyLostPerSecond = 1f;
     public int maxLives = 3;
 
-    [Header("Mouse Light")]
-    public MouseLight mouseLight;
+    [Header("Explosions")]
+    public GameObject explosionPrefab;
 
     private int numLives = 0;
     private int currentScore = 0;
-    private float currentEnergy = 0f;
+    private bool isPaused = false;
 
-    public System.Action<float> OnEnergyChanged;
+    public int CurrentScore => currentScore;
+
     public System.Action<int> OnScoreChanged;
     public System.Action<int> OnLivesChanged;
+    public System.Action<bool> OnPauseStateChanged;
+    public System.Action OnGameOver;
 
     private List<Boat> activeBoats = new List<Boat>();
     private Coroutine spawnCoroutine;
     private Coroutine chestSpawnCoroutine;
-
-    private bool isCursorVisible = true;
+    private Coroutine krakenSpawnCoroutine;
 
     void Start()
     {
         numLives = maxLives;
         currentScore = 0;
-        currentEnergy = maxEnergy;
+        isPaused = false;
 
         currentBoatSpawnInterval = initialBoatSpawnInterval;
         boatSpawnStartTime = Time.time;
 
-        OnEnergyChanged?.Invoke(currentEnergy);
+        currentKrakenSpawnIndex = Random.Range(0, krakenSpawnBounds.Count);
+
         OnLivesChanged?.Invoke(numLives);
         OnScoreChanged?.Invoke(currentScore);
 
@@ -80,38 +83,60 @@ public class GameManager : Singleton<GameManager>
         chestSpawnCoroutine = StartCoroutine(SpawnChestsRoutine());
 
         // Start spawning kraken
-        StartCoroutine(SpawnKrakenRoutine());
+        krakenSpawnCoroutine = StartCoroutine(SpawnKrakenRoutine());
     }
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
-        {
-            isCursorVisible = !isCursorVisible;
-        }
-        Cursor.visible = isCursorVisible;
-
         // Check if any boats have reached their target and need to be despawned
         CheckForBoatsToDespawn();
         CheckForBoatsToScore();
+    }
 
-        if (mouseLight.IsLightOn)
+    void OnDestroy()
+    {
+        ResumeGame();
+        StopSpawning();
+    }
+
+    public void ResetGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void PauseGame()
+    {
+        if (!isPaused)
         {
-            currentEnergy -= energyLostPerSecond * Time.deltaTime;
-            currentEnergy = Mathf.Max(0f, currentEnergy);
-            OnEnergyChanged?.Invoke(currentEnergy);
-        }
-        else
-        {
-            currentEnergy += energyGainedPerSecond * Time.deltaTime;
-            currentEnergy = Mathf.Min(maxEnergy, currentEnergy);
-            OnEnergyChanged?.Invoke(currentEnergy);
+            isPaused = true;
+            Time.timeScale = 0f;
+            SFXManager.Instance.PauseMusic();
+            OnPauseStateChanged?.Invoke(true);
         }
     }
 
-    void ResetGame()
+    public void ResumeGame()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        if (isPaused)
+        {
+            isPaused = false;
+            Time.timeScale = 1f;
+            SFXManager.Instance.ResumeMusic();
+            OnPauseStateChanged?.Invoke(false);
+        }
+    }
+
+    public bool IsPaused()
+    {
+        return isPaused;
+    }
+
+    public void SpawnExplosion(Vector3 position)
+    {
+        GameObject explosion = Instantiate(explosionPrefab, position, Quaternion.identity);
+        Destroy(explosion, 0.5f);
+
+        SFXManager.Instance.PlaySFX("explosion");
     }
 
     public void LoseLife()
@@ -120,11 +145,21 @@ public class GameManager : Singleton<GameManager>
         numLives = Mathf.Max(numLives, 0);
         OnLivesChanged?.Invoke(numLives);
 
+        // Apply screen shake when losing a life
+        if (Camera.main != null)
+        {
+            ShakeBehavior shakeBehavior = Camera.main.GetComponent<ShakeBehavior>();
+            if (shakeBehavior != null)
+            {
+                shakeBehavior.Shake();
+            }
+        }
+
         if (numLives <= 0)
         {
             // Game over
             Debug.Log("Game over");
-            ResetGame();
+            OnGameOver?.Invoke();
         }
     }
 
@@ -156,6 +191,8 @@ public class GameManager : Singleton<GameManager>
 
                 AddScore(boat.points);
                 boat.Score();
+
+                SFXManager.Instance.PlaySFX("minor_success");
             }
         }
     }
@@ -168,7 +205,12 @@ public class GameManager : Singleton<GameManager>
         while (true)
         {
             yield return new WaitForSeconds(krakenSpawnInterval);
-            SpawnKraken();
+
+            // Only spawn kraken if game is not paused
+            if (!isPaused)
+            {
+                SpawnKraken();
+            }
         }
     }
 
@@ -180,10 +222,14 @@ public class GameManager : Singleton<GameManager>
             return;
         }
 
+        // choose a random spawn bounds
+        Bounds currentKrakenSpawnBounds = krakenSpawnBounds[currentKrakenSpawnIndex];
+        currentKrakenSpawnIndex = (currentKrakenSpawnIndex + 1) % krakenSpawnBounds.Count;
+
         // Generate random spawn position within bounds
         Vector3 spawnPosition = new Vector3(
-            Random.Range(spawnBounds.min.x, spawnBounds.max.x),
-            Random.Range(spawnBounds.min.y, spawnBounds.max.y),
+            Random.Range(currentKrakenSpawnBounds.min.x, currentKrakenSpawnBounds.max.x),
+            Random.Range(currentKrakenSpawnBounds.min.y, currentKrakenSpawnBounds.max.y),
             0f
         );
 
@@ -207,8 +253,8 @@ public class GameManager : Singleton<GameManager>
             // Wait for the spawn interval
             yield return new WaitForSeconds(currentBoatSpawnInterval);
 
-            // Only spawn if we haven't reached the maximum number of boats
-            if (activeBoats.Count < maxBoats)
+            // Only spawn if we haven't reached the maximum number of boats and game is not paused
+            if (activeBoats.Count < maxBoats && !isPaused)
             {
                 SpawnBoat();
             }
@@ -352,6 +398,12 @@ public class GameManager : Singleton<GameManager>
             StopCoroutine(chestSpawnCoroutine);
             chestSpawnCoroutine = null;
         }
+
+        if (krakenSpawnCoroutine != null)
+        {
+            StopCoroutine(krakenSpawnCoroutine);
+            krakenSpawnCoroutine = null;
+        }
     }
 
     // Public method to start spawning again
@@ -395,8 +447,11 @@ public class GameManager : Singleton<GameManager>
             // Wait for the chest spawn interval
             yield return new WaitForSeconds(chestSpawnInterval);
 
-            // Spawn a chest
-            SpawnChest();
+            // Only spawn chests if game is not paused
+            if (!isPaused)
+            {
+                SpawnChest();
+            }
         }
     }
 
@@ -486,19 +541,6 @@ public class GameManager : Singleton<GameManager>
         return colliders.Length > 0;
     }
 
-    // Clean up when GameManager is destroyed
-    void OnDestroy()
-    {
-        // Despawn all remaining boats
-        for (int i = activeBoats.Count - 1; i >= 0; i--)
-        {
-            if (activeBoats[i] != null)
-            {
-                DespawnBoat(activeBoats[i], i);
-            }
-        }
-    }
-
     void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
@@ -514,6 +556,12 @@ public class GameManager : Singleton<GameManager>
         foreach (Bounds invalidBounds in invalidChestSpawnBounds)
         {
             Gizmos.DrawWireCube(invalidBounds.center, invalidBounds.size);
+        }
+
+        Gizmos.color = new Color(1, 0, 1);
+        foreach (Bounds krakenSpawnBounds in krakenSpawnBounds)
+        {
+            Gizmos.DrawWireCube(krakenSpawnBounds.center, krakenSpawnBounds.size);
         }
     }
 }

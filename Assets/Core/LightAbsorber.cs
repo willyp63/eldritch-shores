@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class LightAbsorber : MonoBehaviour
@@ -9,6 +10,7 @@ public class LightAbsorber : MonoBehaviour
     public float drainTime = 3f;
     public float maxGlow = 5f;
     public bool alwaysLit = false;
+    public bool randomizeColors = false;
 
     [Header("Interaction Settings")]
     public float interactionDistance = 1f; // Distance from collider edge to start charging
@@ -22,6 +24,20 @@ public class LightAbsorber : MonoBehaviour
     {
         spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
         circleCollider = GetComponent<CircleCollider2D>();
+
+        spriteRenderers = spriteRenderers
+            .Where(sr => sr.gameObject.name != "Ripples Sprite")
+            .ToArray();
+
+        if (randomizeColors)
+        {
+            float randomShade = Random.Range(0.9f, 1f);
+            Color randomColor = new Color(randomShade, randomShade, randomShade);
+            foreach (var spriteRenderer in spriteRenderers)
+            {
+                spriteRenderer.color = randomColor;
+            }
+        }
 
         if (circleCollider == null)
         {
@@ -38,12 +54,6 @@ public class LightAbsorber : MonoBehaviour
 
     void HandleMouseInput()
     {
-        if (!GameManager.Instance.mouseLight.IsLightOn)
-        {
-            isBeingCharged = false;
-            return;
-        }
-
         // Check if mouse is within interaction distance of this obstacle
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 

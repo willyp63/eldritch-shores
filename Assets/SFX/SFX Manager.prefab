@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4625522482045024426
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7856480737286502398}
+  - component: {fileID: 3439766146626278370}
+  m_Layer: 0
+  m_Name: SFX Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7856480737286502398
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4625522482045024426}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 14
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3439766146626278370
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4625522482045024426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f12abd268dffa384a9143d9e52f739ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dontDestroyOnLoad: 1
+  sfxSource: {fileID: 0}
+  sfxSource2: {fileID: 0}
+  sfxSource3: {fileID: 0}
+  durationSFXSource: {fileID: 0}
+  musicSource: {fileID: 0}
+  audioClips:
+  - {fileID: 8300000, guid: 4655ac9f462c64f409ca341a62a857cd, type: 3}
+  - {fileID: 8300000, guid: 5dc9c9bbc2780c54597226620409e936, type: 3}
+  - {fileID: 8300000, guid: 7885d05a29b7294488c510e94f0aad46, type: 3}
+  - {fileID: 8300000, guid: 3cfcf9f7317c3fe449fa541f294741a5, type: 3}
+  - {fileID: 8300000, guid: 7d164b482ec34034587c9891177f5198, type: 3}
+  backgroundMusic: {fileID: 8300000, guid: 78e8e4880d68d23428b8820be8aea09f, type: 3}
+  sfxMaxVolume: 1
+  musicMaxVolume: 0.2

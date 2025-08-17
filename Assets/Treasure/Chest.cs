@@ -53,6 +53,8 @@ public class Chest : MonoBehaviour
                 GameManager.Instance.AddLives(lives);
             }
 
+            SFXManager.Instance.PlaySFX("minor_success");
+
             Destroy(gameObject);
         }
     }

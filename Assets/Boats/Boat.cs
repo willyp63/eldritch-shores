@@ -486,6 +486,7 @@ public class Boat : MonoBehaviour
             FloatingTextManager.Instance.SpawnText("WRECKED!", GetBoatPosition(), Color.red, 1f);
 
             GameManager.Instance.LoseLife();
+            GameManager.Instance.SpawnExplosion(GetBoatPosition());
 
             // Destroy the boat
             Destroy(gameObject);

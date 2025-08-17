@@ -41,12 +41,21 @@ TagManager:
   - name: Background
     uniqueID: 1510557109
     locked: 0
-  - name: Treasure
-    uniqueID: 103734031
+  - name: Monsters
+    uniqueID: 3834710389
     locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Treasure
+    uniqueID: 103734031
+    locked: 0
   - name: Floating Text
     uniqueID: 1024539363
+    locked: 0
+  - name: Clouds
+    uniqueID: 130963639
+    locked: 0
+  - name: UI
+    uniqueID: 4088313741
     locked: 0

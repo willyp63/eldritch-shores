@@ -100,16 +100,12 @@ public class Kraken : MonoBehaviour
             float distanceToBoat = Vector2.Distance(GetKrakenPosition(), currentTarget);
             if (distanceToBoat <= stoppingDistance)
             {
-                Debug.Log("Kraken sunk boat!!");
+                Vector3 boatPosition = targetBoat.GetComponent<Boat>().GetBoatPosition();
 
-                FloatingTextManager.Instance.SpawnText(
-                    "SUNK!",
-                    targetBoat.GetComponent<Boat>().GetBoatPosition(),
-                    Color.red,
-                    1f
-                );
+                FloatingTextManager.Instance.SpawnText("EATEN!", boatPosition, Color.red, 1f);
 
                 GameManager.Instance.LoseLife();
+                GameManager.Instance.SpawnExplosion(boatPosition);
 
                 // Destroy the boat
                 Destroy(targetBoat.gameObject);
@@ -120,8 +116,7 @@ public class Kraken : MonoBehaviour
         }
         else
         {
-            // No boat found, pick a random target
-            PickNewTarget();
+            HandleWanderingBehavior();
         }
     }
 

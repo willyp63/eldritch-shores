@@ -65,10 +65,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6fa353d236060247bcbeb77d6144aa9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chargeTime: 2
-  drainTime: 2
+  chargeTime: 2.5
+  drainTime: 2.5
   maxGlow: 10
   alwaysLit: 0
+  randomizeColors: 0
   interactionDistance: 0.5
 --- !u!114 &-1911328642472403002
 MonoBehaviour:
@@ -147,7 +148,7 @@ SortingGroup:
   m_GameObject: {fileID: 1238529702146449748}
   m_Enabled: 1
   m_SortingLayerID: 103734031
-  m_SortingLayer: -1
+  m_SortingLayer: 1
   m_SortingOrder: 0
   m_SortAtRoot: 0
 --- !u!1 &1874374912686564842
