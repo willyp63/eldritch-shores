@@ -240,6 +240,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   chargeTime: 0.5
   drainTime: 3
+  minGlow: 0
   maxGlow: 3
   alwaysLit: 0
   randomizeColors: 1

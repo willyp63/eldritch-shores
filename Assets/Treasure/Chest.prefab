@@ -67,6 +67,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   chargeTime: 2.5
   drainTime: 2.5
+  minGlow: 1
   maxGlow: 10
   alwaysLit: 0
   randomizeColors: 0

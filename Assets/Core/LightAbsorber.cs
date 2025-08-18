@@ -8,6 +8,7 @@ public class LightAbsorber : MonoBehaviour
     [Header("Lighting Settings")]
     public float chargeTime = 0.5f;
     public float drainTime = 3f;
+    public float minGlow = 0f;
     public float maxGlow = 5f;
     public bool alwaysLit = false;
     public bool randomizeColors = false;
@@ -104,7 +105,11 @@ public class LightAbsorber : MonoBehaviour
             {
                 if (spriteRenderers[i] != null)
                 {
-                    spriteRenderers[i].material.SetFloat("_Glow", currentLightLevel * maxGlow);
+                    spriteRenderers[i]
+                        .material.SetFloat(
+                            "_Glow",
+                            currentLightLevel * (maxGlow - minGlow) + minGlow
+                        );
                 }
             }
         }

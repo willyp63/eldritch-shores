@@ -102,7 +102,7 @@ public class Kraken : MonoBehaviour
             {
                 Vector3 boatPosition = targetBoat.GetComponent<Boat>().GetBoatPosition();
 
-                FloatingTextManager.Instance.SpawnText("EATEN!", boatPosition, Color.red, 1f);
+                FloatingTextManager.Instance.SpawnText("WRECKED!", boatPosition, Color.red, 1f);
 
                 GameManager.Instance.LoseLife();
                 GameManager.Instance.SpawnExplosion(boatPosition);
