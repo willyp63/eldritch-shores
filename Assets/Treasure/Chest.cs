@@ -30,6 +30,8 @@ public class Chest : MonoBehaviour
         {
             if (points > 0)
             {
+                AnalyticsManager.Instance.SendEvent("points_chest_collected");
+
                 FloatingTextManager.Instance.SpawnText(
                     $"+{points} PTS",
                     transform.position,
@@ -42,6 +44,8 @@ public class Chest : MonoBehaviour
 
             if (lives > 0)
             {
+                AnalyticsManager.Instance.SendEvent("lives_chest_collected");
+
                 string livesText = lives > 1 ? "LIVES" : "LIFE";
                 FloatingTextManager.Instance.SpawnText(
                     $"+{lives} {livesText}",

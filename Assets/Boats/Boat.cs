@@ -483,6 +483,8 @@ public class Boat : MonoBehaviour
         {
             Debug.Log("Boat hit obstacle!!");
 
+            AnalyticsManager.Instance.SendEvent("boat_hit_obstacle");
+
             FloatingTextManager.Instance.SpawnText("WRECKED!", GetBoatPosition(), Color.red, 1f);
 
             GameManager.Instance.LoseLife();

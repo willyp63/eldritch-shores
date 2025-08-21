@@ -102,6 +102,8 @@ public class Kraken : MonoBehaviour
             {
                 Vector3 boatPosition = targetBoat.GetComponent<Boat>().GetBoatPosition();
 
+                AnalyticsManager.Instance.SendEvent("kraken_sunk_boat");
+
                 FloatingTextManager.Instance.SpawnText("WRECKED!", boatPosition, Color.red, 1f);
 
                 GameManager.Instance.LoseLife();

@@ -49,6 +49,7 @@ public class GameManager : Singleton<GameManager>
     private int numLives = 0;
     private int currentScore = 0;
     private bool isPaused = false;
+    private float runStartTime = 0f;
 
     public int CurrentScore => currentScore;
 
@@ -64,9 +65,13 @@ public class GameManager : Singleton<GameManager>
 
     void Start()
     {
+        AnalyticsManager.Instance.StartNewRun("arcade");
+        AnalyticsManager.Instance.SendEvent("run_started");
+
         numLives = maxLives;
         currentScore = 0;
         isPaused = false;
+        runStartTime = Time.time;
 
         currentBoatSpawnInterval = initialBoatSpawnInterval;
         boatSpawnStartTime = Time.time;
@@ -159,6 +164,22 @@ public class GameManager : Singleton<GameManager>
         {
             // Game over
             Debug.Log("Game over");
+
+            float runTime = Time.time - runStartTime;
+            AnalyticsManager.Instance.SendEvent(
+                "run_ended",
+                new Dictionary<string, object>
+                {
+                    { "score", currentScore },
+                    { "run_time", runTime },
+                }
+            );
+            AnalyticsManager.Instance.SendHighScoreEvent(
+                currentScore,
+                "noobslayer#69",
+                new Dictionary<string, object> { { "run_time", runTime } }
+            );
+
             OnGameOver?.Invoke();
         }
     }
